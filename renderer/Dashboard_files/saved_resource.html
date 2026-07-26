@@ -2057,20 +2057,6 @@
     var log = habitLog[today] || {};
     var habitsDone = HABITS.filter(function(h){ return !!log[h.id]; });
 
-    // Moved up from the map-header "needs attention" readout further down
-    // (which still uses this same count) so the per-category attention
-    // flags below - which decide whether a category triangle gets the "!"
-    // mark - can use it too, instead of duplicating the urgent/overdue
-    // conference-task logic in two places.
-    var confAttention = 0;
-    (conferences||[]).forEach(function(c){
-      CONF_TASKS.forEach(function(t){
-        var done = !!(c.tasks && c.tasks[t.key]);
-        var due = c.taskDueDates && c.taskDueDates[t.key];
-        if(!done && taskUrgency(due)) confAttention++;
-      });
-    });
-
     // computed early (rather than down by the hub-color section below) so
     // the spark-speed scaling further down can use it too - today's total
     // possible HABIT points defines ratio=1, uncapped past that on a
@@ -2120,6 +2106,14 @@
     // slot instead of getting buried behind "+N".
     function attnFirst(list, attnFn){
       return list.slice().sort(function(a,b){ return (attnFn(b)?1:0) - (attnFn(a)?1:0); });
+    }
+    // How many "!" marks a category will actually render, given attnFirst
+    // already guarantees attention items sort into the visible slots first -
+    // capped at LEAF_CAP, same as the leaves themselves, so the map-header
+    // "N need attention" readout (built from this) can never drift from the
+    // number of marks actually on screen.
+    function countMarked(list, attnFn){
+      return Math.min(list.filter(attnFn).length, LEAF_CAP);
     }
 
     // Per-leaf "needs attention" flag - drives the small "!" mark rendered
@@ -2293,12 +2287,19 @@
     renderHubRingGauge(scoreRatio);
     renderHubSpark(scoreRatio);
 
-    // combined "needs attention" readout for the map header - open to-dos,
-    // unread mail, and conference tasks that are unticked and urgent/overdue
-    // (confAttention computed up top now, shared with the per-category "!"
-    // marks) - replaces the old Nodes/Links graph-theory counts, which
-    // meant nothing to the user.
-    var attentionCount = todosOpen.length + EMAILS.length + confAttention;
+    // combined "needs attention" readout for the map header - deliberately
+    // built from the exact same countMarked() calls (and the exact same
+    // attn rules) that decide the per-leaf "!" marks below, so this number
+    // can never say more (or fewer) items need attention than the marks
+    // actually visible on the map. Previously counted ALL open to-dos and
+    // ALL unread mail regardless of due date, which is why it used to read
+    // "4 need attention" while only 1 leaf was ever marked - replaced per
+    // explicit feedback that the two should always match.
+    var attentionCount =
+      countMarked(todaysEvents, function(){ return true; }) +
+      countMarked(weekEventsOther, function(x){ return x.attn; }) +
+      countMarked(conferences, confNeedsAttn) +
+      countMarked(todosOpen, function(t){ return !!taskUrgency(t.due); });
     var attentionEl = document.getElementById("mapAttentionStat");
     if(attentionEl){
       attentionEl.textContent = attentionCount===0 ? "All clear" :

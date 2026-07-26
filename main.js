@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, Menu, Notification, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 
 // A dropped connection or socket timeout while checking Gmail/Calendar is a
 // routine, expected event, not a reason to crash. Some of those show up as
@@ -36,6 +37,33 @@ const ICON_PNG = path.join(__dirname, 'assets', 'icon.png');
 let mainWindow = null;
 let settingsWindow = null;
 let lastUnread = 0;
+let updateReadyToInstall = false;
+
+// Checks GitHub Releases (see package.json's build.publish) for a newer
+// build, downloads it silently in the background if found, and installs it
+// the next time the app quits - no tray/menu UI to drive this from, so it's
+// deliberately just an automatic startup check plus a native Notification,
+// matching how the mail-check flow already surfaces things in this app.
+// Not meaningful in a dev run (no packaged update feed to check against).
+function checkForAppUpdate() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = false; // we drive quitAndInstall ourselves below
+  autoUpdater.on('update-downloaded', (info) => {
+    updateReadyToInstall = true;
+    new Notification({
+      title: 'Nexus Dashboard',
+      body: `Update ${info.version} downloaded — it'll install next time you close the app.`,
+      icon: ICON_PNG
+    }).show();
+  });
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-update check failed:', err);
+  });
+  autoUpdater.checkForUpdates().catch((err) => {
+    console.error('Auto-update check failed:', err);
+  });
+}
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -52,6 +80,7 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     createMainWindow();
+    checkForAppUpdate();
 
     if (!secureStore.hasCredentials()) {
       createSettingsWindow();
@@ -67,9 +96,15 @@ if (!gotLock) {
 
   // No tray, no background polling, nothing hanging around after the window
   // closes - closing the window (or all windows) fully quits the app and
-  // ends the process, on every platform.
+  // ends the process, on every platform. If an update finished downloading
+  // this session, install it silently now instead of a plain quit - the
+  // user gets the new version next launch without any extra step.
   app.on('window-all-closed', () => {
-    app.quit();
+    if (updateReadyToInstall) {
+      autoUpdater.quitAndInstall(true, false);
+    } else {
+      app.quit();
+    }
   });
 
   ipcMain.handle('save-credentials', async (event, data) => {

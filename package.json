@@ -9,6 +9,7 @@
     "dist": "electron-builder"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "google-auth-library": "^10.9.0",
     "imapflow": "^1.0.164",
     "mailparser": "^3.9.14"
@@ -44,6 +45,12 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Nexus Dashboard"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "KanzowA",
+      "repo": "nexus-dashboard-app",
+      "releaseType": "release"
     }
   }
 }

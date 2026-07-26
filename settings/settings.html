@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Nexus Dashboard — Settings</title>
+<style>
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  p.sub { color: #94a3b8; font-size: 12px; margin: 0 0 20px; }
+  label { display: block; font-size: 12px; margin-bottom: 6px; color: #cbd5e1; }
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 13px;
+  }
+  input:focus { outline: none; border-color: #38bdf8; }
+  .help {
+    font-size: 11px;
+    color: #64748b;
+    margin: -8px 0 20px;
+    line-height: 1.5;
+  }
+  button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:hover { background: #7dd3fc; }
+  button:disabled { background: #334155; color: #64748b; cursor: default; }
+  #status { font-size: 12px; margin-top: 12px; min-height: 16px; }
+  #status.error { color: #f87171; }
+  #status.ok { color: #4ade80; }
+  hr { border: none; border-top: 1px solid #1e293b; margin: 28px 0 20px; }
+  #calStatus { font-size: 12px; margin-top: 12px; min-height: 16px; color: #94a3b8; }
+  #calStatus.connected { color: #4ade80; }
+  #calStatus.error { color: #f87171; }
+</style>
+</head>
+<body>
+  <h1>Connect your Gmail account</h1>
+  <p class="sub">Used to show your unread inbox in the dashboard and let you mark messages read.</p>
+
+  <label for="email">Gmail address</label>
+  <input id="email" type="email" placeholder="you@gmail.com" autocomplete="username" />
+
+  <label for="appPassword">App Password</label>
+  <input id="appPassword" type="password" placeholder="16-character app password" autocomplete="new-password" />
+  <div class="help">
+    Not your normal password. Enable 2-Step Verification, then generate one at
+    myaccount.google.com/apppasswords — paste the 16 characters here (spaces are fine).
+  </div>
+
+  <button id="saveBtn">Save &amp; Connect</button>
+  <div id="status"></div>
+
+  <hr />
+
+  <h1>Connect Google Calendar</h1>
+  <p class="sub">Lets the dashboard show upcoming events and add new ones for you.</p>
+
+  <label for="clientId">OAuth Client ID</label>
+  <input id="clientId" type="text" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off" />
+
+  <label for="clientSecret">OAuth Client Secret</label>
+  <input id="clientSecret" type="password" placeholder="Client secret" autocomplete="off" />
+  <div class="help">
+    From a free Google Cloud project: enable the Calendar API, configure the OAuth consent screen
+    (External, Testing, add yourself as a test user), then create an OAuth Client ID of type
+    "Desktop app" and paste its ID + secret here.
+  </div>
+
+  <button id="calConnectBtn">Connect Google Calendar</button>
+  <div id="calStatus"></div>
+
+  <script src="settings-renderer.js"></script>
+</body>
+</html>

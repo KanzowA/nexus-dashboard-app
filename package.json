@@ -1,0 +1,49 @@
+{
+  "name": "nexus-dashboard-app",
+  "version": "1.0.0",
+  "description": "Nexus Personal Control Deck desktop app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "google-auth-library": "^10.9.0",
+    "imapflow": "^1.0.164",
+    "mailparser": "^3.9.14"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.axelkrappotke.nexusdashboard",
+    "productName": "Nexus Dashboard",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "settings/**/*",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexus Dashboard"
+    }
+  }
+}

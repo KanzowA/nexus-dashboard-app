@@ -23,6 +23,26 @@
         frame.contentWindow.postMessage({ __nexusBridge:true, id:data.id, error: (err && err.message) || String(err) }, '*');
       });
   });
+
+  // Proactive push (not a bridge response) telling the iframe to run its own
+  // sync-now flow - fired on window focus, since main.js already has the
+  // local data it needs via the request that triggers, not this event.
+  if (window.nexusAPI && window.nexusAPI.onTriggerSync) {
+    window.nexusAPI.onTriggerSync(function(){
+      var frame = findFrame();
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ __nexusBridge: true, event: 'trigger-sync' }, '*');
+      }
+    });
+  }
+  if (window.nexusAPI && window.nexusAPI.onTriggerSyncManual) {
+    window.nexusAPI.onTriggerSyncManual(function(){
+      var frame = findFrame();
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ __nexusBridge: true, event: 'trigger-sync-manual' }, '*');
+      }
+    });
+  }
 })();
 </script>
 </body></html>

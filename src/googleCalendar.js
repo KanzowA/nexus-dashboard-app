@@ -3,7 +3,10 @@ const { OAuth2Client } = require('google-auth-library');
 const { shell } = require('electron');
 const secureStore = require('./secureStore');
 
-const SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/drive.appdata'
+];
 const API_BASE = 'https://www.googleapis.com/calendar/v3';
 const CONNECT_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -79,7 +82,7 @@ function connect({ clientId, clientSecret }) {
       const authUrl = client.generateAuthUrl({
         access_type: 'offline',
         prompt: 'consent',
-        scope: [SCOPE]
+        scope: SCOPES
       });
       shell.openExternal(authUrl);
     });
@@ -217,4 +220,4 @@ async function listUpcomingEvents() {
   return listEvents({ timeMin: now.toISOString(), timeMax: in14Days.toISOString() });
 }
 
-module.exports = { getStatus, connect, createEvent, updateEvent, deleteEvent, listEvents, listUpcomingEvents };
+module.exports = { getStatus, connect, createEvent, updateEvent, deleteEvent, listEvents, listUpcomingEvents, getAccessToken };

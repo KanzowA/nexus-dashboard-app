@@ -52,6 +52,9 @@
   #calStatus { font-size: 12px; margin-top: 12px; min-height: 16px; color: #94a3b8; }
   #calStatus.connected { color: #4ade80; }
   #calStatus.error { color: #f87171; }
+  #syncStatus { font-size: 12px; margin-top: 12px; min-height: 16px; color: #94a3b8; }
+  #syncStatus.connected { color: #4ade80; }
+  #syncStatus.error { color: #f87171; }
 </style>
 </head>
 <body>
@@ -89,6 +92,14 @@
 
   <button id="calConnectBtn">Connect Google Calendar</button>
   <div id="calStatus"></div>
+
+  <hr />
+
+  <h1>Sync across devices</h1>
+  <p class="sub">Keeps to-dos, habits, and conferences in sync between this app and the web version, via your own Google Drive — uses the same Google connection as Calendar above.</p>
+
+  <button id="syncNowBtn">Sync now</button>
+  <div id="syncStatus"></div>
 
   <script src="settings-renderer.js"></script>
 </body>

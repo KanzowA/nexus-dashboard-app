@@ -68,3 +68,46 @@ calConnectBtn.addEventListener('click', async () => {
   }
   calConnectBtn.disabled = false;
 });
+
+const syncNowBtn = document.getElementById('syncNowBtn');
+const syncStatusEl = document.getElementById('syncStatus');
+
+function fmtAgo(ts) {
+  if (!ts) return null;
+  const diffMin = Math.round((Date.now() - ts) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  return `${Math.round(diffMin / 60)}h ago`;
+}
+
+async function refreshSyncStatus() {
+  const status = await window.nexusAPI.getSyncStatus();
+  if (!status.connected) {
+    syncStatusEl.textContent = 'Not connected — connect Google Calendar above first.';
+    syncStatusEl.className = '';
+    return;
+  }
+  const ago = fmtAgo(status.lastSyncedAt);
+  syncStatusEl.textContent = ago ? `Synced ${ago}.` : 'Connected — not synced yet.';
+  syncStatusEl.className = 'connected';
+}
+refreshSyncStatus();
+
+syncNowBtn.addEventListener('click', async () => {
+  syncNowBtn.disabled = true;
+  syncStatusEl.textContent = 'Requesting sync…';
+  syncStatusEl.className = '';
+
+  // The actual data lives in the dashboard window, not here - this just asks
+  // it to run its own sync-now flow (result/errors show as a toast there).
+  const result = await window.nexusAPI.requestSync();
+  if (result.ok) {
+    syncStatusEl.textContent = 'Requested — check the dashboard window.';
+    syncStatusEl.className = 'connected';
+  } else {
+    syncStatusEl.textContent = result.error || 'Could not request a sync.';
+    syncStatusEl.className = 'error';
+  }
+  syncNowBtn.disabled = false;
+  setTimeout(refreshSyncStatus, 3000);
+});

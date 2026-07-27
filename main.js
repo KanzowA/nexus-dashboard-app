@@ -31,6 +31,7 @@ if (!app.isPackaged) {
 const secureStore = require('./src/secureStore');
 const { getUnreadCount, getUnreadSummaries, markAsRead } = require('./src/mailChecker');
 const googleCalendar = require('./src/googleCalendar');
+const driveSync = require('./src/driveSync');
 
 const ICON_PNG = path.join(__dirname, 'assets', 'icon.png');
 
@@ -38,6 +39,8 @@ let mainWindow = null;
 let settingsWindow = null;
 let lastUnread = 0;
 let updateReadyToInstall = false;
+let lastAutoSyncAt = 0;
+const AUTO_SYNC_MIN_INTERVAL_MS = 30 * 1000;
 
 // Checks GitHub Releases (see package.json's build.publish) for a newer
 // build, downloads it silently in the background if found, and installs it
@@ -243,6 +246,36 @@ if (!gotLock) {
     }
   });
 
+  // Renderer gathers its own localStorage data (todos/conferences/habitDefs/
+  // habitLog/dailyStats) and hands it here since main.js is the process with
+  // reliable outbound network access - mirrors the existing backup-app-data
+  // shape above. Returns the merged result for the renderer to write back
+  // into its own localStorage and re-render from.
+  ipcMain.handle('sync-now', async (event, localData) => {
+    try {
+      const result = await driveSync.pullMergePush(localData);
+      lastAutoSyncAt = Date.now();
+      return result;
+    } catch (err) {
+      return { ok: false, error: err.message, insufficientScope: !!err.insufficientScope };
+    }
+  });
+
+  ipcMain.handle('get-sync-status', async () => {
+    const status = await driveSync.getStatus();
+    return { ...status, lastSyncedAt: lastAutoSyncAt || null };
+  });
+
+  // Settings window has no access to the dashboard's local data (that lives
+  // in the main window's iframe), so a manual "Sync now" click there just
+  // pings the main window to run its own sync-now flow - same mechanism as
+  // the focus-triggered sync, just user-initiated instead of automatic.
+  ipcMain.handle('request-sync', () => {
+    if (!mainWindow) return { ok: false, error: 'Open the dashboard first.' };
+    mainWindow.webContents.send('trigger-sync-manual');
+    return { ok: true };
+  });
+
   ipcMain.handle('refresh-dashboard-data', async () => {
     const [inbox, calendar] = await Promise.all([
       (async () => {
@@ -281,6 +314,16 @@ function createMainWindow() {
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'dashboard.html'));
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+  // Cheap way to deliver "auto-sync" in practice: catches the common case of
+  // finishing an edit on another device, then switching back to this
+  // already-open window, without polling on a timer. Just pings the
+  // renderer to run its own sync-now flow (which already has the local
+  // data); min-interval guard avoids re-syncing on rapid alt-tabbing.
+  mainWindow.on('focus', () => {
+    if (Date.now() - lastAutoSyncAt < AUTO_SYNC_MIN_INTERVAL_MS) return;
+    if (!googleCalendar.getStatus().connected) return;
+    mainWindow.webContents.send('trigger-sync');
   });
 }
 

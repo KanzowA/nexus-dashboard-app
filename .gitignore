@@ -3,3 +3,8 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# web/ (PWA companion) - Cloudflare Pages local dev secrets, never committed
+web/.dev.vars
+web/.wrangler/
+.wrangler/

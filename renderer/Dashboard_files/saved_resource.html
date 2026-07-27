@@ -800,6 +800,26 @@
   // here so a fresh renderHubSpark() call (from a real data change) can
   // cancel any still-pending self-scheduled one instead of stacking timers.
   var hubSparkTimer = null;
+  // Same early-call hoisting hazard as above, just for a different variable:
+  // buildNeuralMap()'s attention-count math (countMarked(conferences, ...))
+  // reads `conferences` on that same too-early first call, and a `var`
+  // assignment further down the file (where this used to live, next to the
+  // rest of the Conferences feature) hadn't run yet - undefined.filter()
+  // threw, and since it's uncaught, it silently halted the rest of the
+  // script's top-level execution for that pass, including everything after
+  // it (event listener attachment, requestAnimationFrame(spin3dTick)
+  // scheduling, etc.) - the root cause of the "completely bugged" app
+  // reported after this shipped in v1.0.1.
+  var CONF_KEY = "nexus_conferences_v1";
+  var CONF_TASKS = [
+    { key:"registration", label:"Registration" },
+    { key:"abstract", label:"Abstract Submission" },
+    { key:"accommodation", label:"Accommodation" },
+    { key:"content", label:"Content" }
+  ];
+  function loadConferences(){ try{ return JSON.parse(localStorage.getItem(CONF_KEY))||[]; }catch(e){ return []; } }
+  function saveConferences(c){ localStorage.setItem(CONF_KEY, JSON.stringify(c)); scheduleBackup(); }
+  var conferences = loadConferences();
   // The page scrolls vertically inside its iframe, and the scrollbar only
   // ever eats space on the right - so margin:auto centering (.nexus, and
   // the disc's hub inside it) centers correctly within the content area,
@@ -1497,16 +1517,9 @@
   });
 
   // ================= Conferences (abstract/accommodation/content prep) =================
-  var CONF_KEY = "nexus_conferences_v1";
-  var CONF_TASKS = [
-    { key:"registration", label:"Registration" },
-    { key:"abstract", label:"Abstract Submission" },
-    { key:"accommodation", label:"Accommodation" },
-    { key:"content", label:"Content" }
-  ];
-  function loadConferences(){ try{ return JSON.parse(localStorage.getItem(CONF_KEY))||[]; }catch(e){ return []; } }
-  function saveConferences(c){ localStorage.setItem(CONF_KEY, JSON.stringify(c)); scheduleBackup(); }
-  var conferences = loadConferences();
+  // CONF_KEY/CONF_TASKS/loadConferences/saveConferences/conferences moved to
+  // the top of the file (see the comment up there) - buildNeuralMap() reads
+  // `conferences` on a first call that happens earlier than this point.
 
   function fmtConfDates(c){
     if(!c.startDate) return "";

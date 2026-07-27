@@ -1,6 +1,6 @@
 {
   "name": "nexus-dashboard-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Nexus Personal Control Deck desktop app",
   "main": "main.js",
   "private": true,

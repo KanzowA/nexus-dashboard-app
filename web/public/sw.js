@@ -3,7 +3,7 @@
 // CACHE_NAME on any shell change to force everyone onto the new version.
 // Deliberately never touches googleapis.com or /api/token-exchange - those
 // carry live, auth-bearing personal data and must always hit the network.
-var CACHE_NAME = "nexus-shell-v1";
+var CACHE_NAME = "nexus-shell-v2";
 var SHELL_FILES = [
   "/",
   "/index.html",
